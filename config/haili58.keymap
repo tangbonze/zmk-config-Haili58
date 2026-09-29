@@ -1,6 +1,9 @@
 #include <behaviors.dtsi>
 #include <dt-bindings/zmk/keys.h>
 
+// Runtime macros edited from DYA Studio are bound with `&rmacro <slot>`.
+#include <behaviors/runtime_macro.dtsi>
+
 / {
     keymap {
         compatible = "zmk,keymap";
@@ -36,6 +39,17 @@
 &trans  &trans  &trans  &trans  &trans  &trans      &trans   &trans           &trans       &trans         &trans  &trans
 &trans  &trans  &trans  &trans  &trans  &trans      &trans   &trans           &trans       &trans         &trans  &trans
             >;
+        };
+
+        // Reserved layers are ignored by a normal build but become editable
+        // from ZMK Studio / DYA Studio. See
+        // https://zmk.dev/docs/features/studio#including-extra-layers
+        layer_3 {
+            status = "reserved";
+        };
+
+        layer_4 {
+            status = "reserved";
         };
     };
 };

@@ -1,0 +1,17 @@
+file_format: "1"
+id: haili58
+name: Haili58
+type: shield
+url: https://github.com/tangbonze/zmk-config-Haili58
+requires:
+  - pro_micro
+exposes:
+  - i2c_oled
+features:
+  - keys
+  - display
+  - encoder
+  - studio
+siblings:
+  - haili58_left
+  - haili58_right

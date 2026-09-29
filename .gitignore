@@ -1,0 +1,13 @@
+# west workspace
+.west/
+
+# west projects (Zephyr, ZMK, DYA Studio modules) — see config/west.yml
+/dependencies/
+
+# Build output
+/build/
+artifacts/
+*.uf2
+*.hex
+*.bin
+*.elf

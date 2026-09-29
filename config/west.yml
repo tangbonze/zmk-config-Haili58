@@ -1,14 +1,21 @@
+# Entry point for `west init -l config`.
+#
+# west projects are imported with `path-prefix: dependencies` so that
+# `west update` clones Zephyr, ZMK and the DYA Studio modules into
+# <repo>/dependencies/ instead of the repository root.
+#
+# That is not cosmetic. A user config has to provide zephyr/module.yml so that
+# ZMK can find boards/shields/ here, and Zephyr's module loader resolves a
+# module's build.kconfig and build.cmake to <module root>/zephyr by default.
+# With a root-level checkout those land on the Zephyr tree itself, which
+# sources Zephyr's Kconfig twice and re-adds the `zephyr` CMake target.
+# Keeping the west workspace in a subdirectory leaves <repo>/zephyr/ holding
+# nothing but module.yml.
+#
+# Add modules to west-modules.yml, not here.
 manifest:
-  defaults:
-    revision: v0.3
-  remotes:
-    - name: zmkfirmware
-      url-base: https://github.com/zmkfirmware
-    # Additional modules containing boards/shields/custom code can be listed here as well
-    # See https://docs.zephyrproject.org/3.2.0/develop/west/manifest.html#projects
-  projects:
-    - name: zmk
-      remote: zmkfirmware
-      import: app/west.yml
   self:
     path: config
+    import:
+      file: west-modules.yml
+      path-prefix: dependencies

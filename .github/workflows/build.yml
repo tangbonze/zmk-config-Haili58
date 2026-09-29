@@ -1,6 +1,66 @@
 name: Build ZMK firmware
-on: [push, pull_request, workflow_dispatch]
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # 11:00 UTC every Friday — catches breakage from upstream ZMK/Zephyr
+    # revisions moving under the cormoran/zmk#main+dya pin.
+    - cron: '0 11 * * 5'
 
 jobs:
   build:
-    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@v0.3
+    runs-on: ubuntu-latest
+    container:
+      # Zephyr 4.1 toolchain. Must match the Zephyr revision that
+      # cormoran/zmk#main+dya pins (v4.1.0+zmk-fixes) — the official
+      # zmkfirmware/zmk build-user-config workflow is pinned to the released
+      # ZMK branch and cannot be used against this fork.
+      image: zmkfirmware/zmk-build-arm:4.1-branch
+    name: Build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache west projects
+        uses: actions/cache@v4
+        continue-on-error: true
+        with:
+          path: |
+            .west
+            dependencies/zephyr
+            dependencies/modules
+            dependencies/zmk
+            dependencies/zmk-*
+          key: ${{ runner.os }}-west-${{ hashFiles('config/west*.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-west-
+
+      - name: Init
+        run: |
+          git config --global --add safe.directory $GITHUB_WORKSPACE
+          west init -l config
+          west update --narrow
+          west zephyr-export
+
+      - name: Build
+        run: west zmk-build -d ./build
+
+      - name: Copy artifacts
+        shell: sh -x {0}
+        run: |
+          mkdir -p artifacts
+          find ./build -type f -path '*/zephyr/zmk.uf2' \
+            | while read -r f; do
+              name=$(basename "$(dirname "$(dirname "$f")")")
+              mv "$f" "artifacts/${name}.uf2"
+            done
+
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zmk-firmware
+          path: artifacts

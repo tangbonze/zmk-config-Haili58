@@ -52,3 +52,38 @@
     };
 };
 
+// Rotary encoder positions for the DYA Studio keyboard preview.
+//
+// CONFIG_ZMK_PHYSICAL_LAYOUTS_FEATURE (zmk-feature-module-physical-layout)
+// draws these on top of the official ZMK key physical layout. Coordinates use
+// the same unit as `haili58-layouts.dtsi` above: one key is 100 x 100, and the
+// whole keyboard spans x = 0..1650, y = 0..600.
+//
+// The order of `encoders` is the sensor index used by `sensor-bindings` in the
+// keymap, i.e. 0 = left encoder, 1 = right encoder. The knobs are placed in the
+// empty outer bottom corner, below the outer column and outboard of the thumb
+// arc. Move the x/y values if yours sit elsewhere — this is preview art, and
+// nothing else in the firmware depends on it. Mirror the other half with
+// x = 1650 - x_left - size.
+/ {
+    dya_rotary_encoders: dya_rotary_encoders {
+        compatible = "cormoran,physical-layout-rotary-encoders";
+        display-name = "Rotary Encoders";
+        encoders = <&dya_encoder_left &dya_encoder_right>;
+    };
+
+    dya_encoder_left: dya_encoder_left {
+        compatible = "cormoran,physical-layout-rotary-encoder";
+        size = <120>;
+        x = <150>;
+        y = <470>;
+    };
+
+    dya_encoder_right: dya_encoder_right {
+        compatible = "cormoran,physical-layout-rotary-encoder";
+        size = <120>;
+        x = <1380>;
+        y = <470>;
+    };
+};
+

@@ -1,11 +1,41 @@
+# Build matrix for the Haili58.
+#
+# ZMK main (and the cormoran/zmk#main+dya fork this config uses) merged the
+# old `nice_nano_v2` board into `nice_nano` as hardware revision 2.0.0, which
+# is the default revision — hence `nice_nano//zmk` here. Zephyr 4.1 moved the
+# shield list into boards/shields, so the ZMK variant qualifier is required.
+#
+# Studio / DYA Studio firmware goes on the central (left) half only, which is
+# also the half that owns the USB port you plug into.
 include:
-  - board: nice_nano_v2
-    shield: settings_reset
-  - board: nice_nano_v2
+  # DYA Studio / ZMK Studio firmware. Unlock with the two thumb keys mapped to
+  # &studio_unlock before editing the keymap from the browser.
+  - board: nice_nano//zmk
     shield: haili58_left
+    artifact: haili58_left_studio
     snippet: studio-rpc-usb-uart
     cmake-args: -DCONFIG_ZMK_STUDIO=y
-  - board: nice_nano_v2
+
+  # Same image without the &studio_unlock gate, for when the keys that trigger
+  # the unlock are not reachable (e.g. a dead matrix). Less safe: anything
+  # plugged into USB can rewrite the keymap.
+  - board: nice_nano//zmk
+    shield: haili58_left
+    artifact: haili58_left_studio_unlocked
+    snippet: studio-rpc-usb-uart
+    cmake-args: -DCONFIG_ZMK_STUDIO=y -DCONFIG_ZMK_STUDIO_LOCKING=n
+
+  # Peripheral (right) half.
+  - board: nice_nano//zmk
     shield: haili58_right
+    artifact: haili58_right
 
-
+  # Wipes stored settings (BLE bonds, runtime macros, keymap) on next boot.
+  # Flash to the matching half, then flash the real firmware over it.
+  - board: nice_nano//zmk
+    shield: settings_reset
+    artifact: settings_reset_left
+  - board: nice_nano//zmk
+    shield: haili58_right
+    artifact: settings_reset_right
+    cmake-args: -DCONFIG_ZMK_SETTINGS_RESET_ON_START=y

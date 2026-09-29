@@ -1,0 +1,54 @@
+# ZMK and module revisions for the Haili58. Imported by west.yml, which puts
+# every project under <repo>/dependencies/.
+#
+# Zephyr is deliberately NOT overridden here. cormoran/zmk#main+dya already
+# pins zmkfirmware/zephyr at v4.1.0+zmk-fixes, which is what this keyboard
+# needs. The cormoran/zephyr fork (v4.1.0+zmk-fixes+nrf-half-duplex-uart) is
+# only needed for single-pin half-duplex *wired* split communication; the
+# Haili58 is a BLE split.
+#
+# Optional extras, not enabled by default (each needs a matching CONFIG_* in
+# config/haili58.conf):
+#   zmk-feature-input-stream            live key press display in the editor
+#   zmk-feature-default-layer          default layer per USB/BLE endpoint
+#   zmk-feature-os-detection           per-OS default layer switching
+#   zmk-module-runtime-input-processor pointer/scroll tuning (needs pointing)
+#   zmk-module-devtool                 development pop-up (logs, studio lock)
+manifest:
+  defaults:
+    remote: cormoran
+    revision: main
+  remotes:
+    - name: cormoran
+      url-base: https://github.com/cormoran
+    - name: zmkfirmware
+      url-base: https://github.com/zmkfirmware
+  projects:
+    # `west zmk-build` helper used by the CI workflow and for local builds.
+    - name: zmk-west-commands
+      revision: v1.0.0
+      import: true
+
+    # ZMK fork with Custom Studio Protocol support, required for everything
+    # beyond the plain ZMK Studio keymap editor.
+    # https://github.com/cormoran/zmk/tree/main+dya
+    - name: zmk
+      revision: main+dya
+      clone-depth: 1
+      import:
+        file: app/west.yml
+
+    # Core modules every Custom Studio Protocol subsystem builds on.
+    - name: zmk-feature-custom-settings
+    - name: zmk-feature-fast-keymap
+
+    # Feature modules enabled for this keyboard (see config/haili58.conf).
+    # https://studio.dya.cormoran.works/developer-guide/level-2
+    - name: zmk-module-settings-rpc
+    - name: zmk-module-ble-management
+    - name: zmk-feature-runtime-macro
+    - name: zmk-feature-runtime-combo
+    - name: zmk-feature-module-physical-layout
+    - name: zmk-feature-device-info
+    - name: zmk-feature-watchdog
+    - name: zmk-feature-kscan-diagnostics
