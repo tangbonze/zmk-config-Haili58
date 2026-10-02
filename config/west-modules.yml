@@ -52,3 +52,11 @@ manifest:
     - name: zmk-feature-device-info
     - name: zmk-feature-watchdog
     - name: zmk-feature-kscan-diagnostics
+
+    # Per-layer rotary encoder bindings, edited from DYA Studio's keymap view
+    # (click a knob -> "Rotary Encoder Configuration"); custom Studio RPC
+    # subsystem `cormoran_rsr`.
+    # Deliberately no `import: true`: the module ships an all-commented-out
+    # west-dependency template, so it has nothing to pull in.
+    # https://github.com/cormoran/zmk-behavior-runtime-sensor-rotate
+    - name: zmk-behavior-runtime-sensor-rotate

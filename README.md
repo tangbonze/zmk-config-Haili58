@@ -56,6 +56,13 @@ Notes and limitations:
   `CONFIG_ZMK_PM_SOFT_OFF=y` (long-press power off) still works.
 - **No per-endpoint default layers.** `zmk-feature-default-layer` and
   `zmk-feature-os-detection` are not enabled here; see "Optional extras" below.
+- **The knobs are configured from the Keymap view, not a separate tab.** DYA
+  Studio puts the rotary encoder bindings inside the keymap editor: click a
+  knob in the layout preview and the *Rotary Encoder Configuration* panel opens,
+  with one binding pair per layer. Without
+  `zmk-behavior-runtime-sensor-rotate` that panel is simply hidden (the UI
+  reports "Runtime sensor rotation subsystem is not available"). See
+  "Runtime encoder bindings" below.
 - **Encoder preview coordinates are a guess.** The two knobs are drawn in the
   free corner outboard of the thumb cluster. Fix `x`/`y` of `dya_encoder_left`
   and `dya_encoder_right` in
@@ -67,8 +74,9 @@ Notes and limitations:
 
 ### Optional extras
 
-Not enabled by default. Add the project to [`config/west.yml`](config/west.yml)
-and the matching `CONFIG_*` to the central half's
+Not enabled by default. Add the project to
+[`config/west-modules.yml`](config/west-modules.yml) and the matching `CONFIG_*`
+to the central half's
 [`config/haili58_left.conf`](config/haili58_left.conf):
 
 | Feature | Project | `CONFIG_*` |
@@ -93,6 +101,41 @@ number in [`config/haili58.keymap`](config/haili58.keymap):
 
 Macro slots are assigned when the macro is created and persist across reboots.
 
+### Runtime encoder bindings
+
+`zmk-behavior-runtime-sensor-rotate` replaces the hard-coded
+`&inc_dec_kp C_VOL_UP C_VOL_DN` / `&inc_dec_kp UP DOWN` pair: each knob now has
+a per-layer binding that can be changed from DYA Studio.
+
+In the Studio keymap view, click a knob, then in **Rotary Encoder
+Configuration** pick clockwise / counter-clockwise behavior and parameters for
+each layer. Bindings are written straight to the keyboard's flash.
+
+How it is wired:
+
+- [`config/haili58.keymap`](config/haili58.keymap) defines two instances —
+  `rsr_left` (volume) and `rsr_right` (page up/down) — so the defaults are
+  exactly what the keyboard did before, and adds a `sensor-bindings` entry to
+  **every** layer. The module's own `&rsr_trans` is used on the layers that
+  should stay silent until configured.
+- A layer with no `sensor-bindings` (or with `&trans`) is skipped by ZMK's
+  sensor dispatch, so the Studio panel would store a binding that never fires.
+  That is why the reserved `layer_3` / `layer_4` carry one too.
+- Bindings are keyed by layer **ID**, so `global_data.bindings` is sized by
+  `ZMK_KEYMAP_LAYERS_LEN` — 5 here, because Studio turns on
+  `ZMK_KEYMAP_LAYER_REORDERING`, which makes the reserved layers count.
+
+Two Kconfig lines in [`config/haili58_left.conf`](config/haili58_left.conf) are
+easy to get wrong:
+
+- `CONFIG_ZMK_RUNTIME_SENSOR_ROTATE=y` has no default, and the module must stay
+  **central-only**: it calls `zmk_behavior_queue_add()`, which ZMK compiles into
+  the split central image only. Enabling it on the right half fails to link.
+- `CONFIG_ZMK_BEHAVIOR_LOCAL_IDS_IN_BINDINGS=y` is *not* implied by the CRC16
+  local-ID flavour this config uses (only `SETTINGS_TABLE` selects it). Without
+  it the panel reads and writes normally but rotating does nothing beyond
+  logging `Failed to find behavior for local_id N`.
+
 ## Build layout
 
 | File | Purpose |
@@ -100,7 +143,7 @@ Macro slots are assigned when the macro is created and persist across reboots.
 | [`config/west.yml`](config/west.yml) | West entry point; puts projects in `dependencies/` |
 | [`config/west-modules.yml`](config/west-modules.yml) | ZMK fork revision + enabled modules |
 | [`config/haili58.conf`](config/haili58.conf) | Kconfig shared by both halves |
-| [`config/haili58_left.conf`](config/haili58_left.conf) | Central-half-only Kconfig (Studio RPC, macros, combos) |
+| [`config/haili58_left.conf`](config/haili58_left.conf) | Central-half-only Kconfig (Studio RPC, macros, combos, encoder rotation) |
 | [`boards/shields/haili58/`](boards/shields/haili58/) | Overlay, physical layout, hardware metadata |
 | [`config/haili58.keymap`](config/haili58.keymap) | Layers and bindings |
 
@@ -119,7 +162,7 @@ left half (later file wins), and only `haili58.conf` for the right half. So:
 | Setting | Left (central) | Right (peripheral) | Why |
 | --- | --- | --- | --- |
 | `ZMK_STUDIO` + every `*_STUDIO_RPC` | ✅ | — | ZMK compiles `ZMK_STUDIO_RPC` into the central image only |
-| Runtime macro / combo | ✅ | — | they hook `behavior_queue.c`, `keymap.c` and the keycode event listener, all central-only in ZMK |
+| Runtime macro / combo / encoder rotation | ✅ | — | they hook `behavior_queue.c`, `keymap.c` and the keycode event listener, all central-only in ZMK |
 | `ZMK_SPLIT_RELAY_EVENT` | ✅ | ✅ | lets the central forward DYA Studio requests to the peripheral |
 | `ZMK_SETTINGS_RPC`, `ZMK_WATCHDOG`, `ZMK_KSCAN_DIAGNOSTICS`, `ZMK_FAST_KEYMAP` | ✅ | ✅ | the peripheral has to answer relayed queries and store its own state |
 | `ZMK_DEVICE_INFO`, `ZMK_BLE_MANAGEMENT`, `ZMK_PHYSICAL_LAYOUTS_FEATURE` | ✅ | ✅ | cheap, and the peripheral reports its own half |

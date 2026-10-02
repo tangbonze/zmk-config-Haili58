@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+      # `dya` is the maintained DYA Studio variant of this config; build it on
+      # push too, instead of relying on a manual workflow_dispatch.
+      - dya
   pull_request:
   workflow_dispatch:
   schedule:

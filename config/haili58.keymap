@@ -4,7 +4,32 @@
 // Runtime macros edited from DYA Studio are bound with `&rmacro <slot>`.
 #include <behaviors/runtime_macro.dtsi>
 
+// Runtime-configurable encoder bindings (DYA Studio keymap view -> click a
+// knob -> "Rotary Encoder Configuration").
+// The include also pulls in &rsr_trans: a sensor behavior with no default
+// binding that still accepts a per-layer one at runtime.
+#include <behaviors/runtime-sensor-rotate.dtsi>
+
 / {
+    behaviors {
+        // Left knob (sensor 0). Defaults are the ones this keyboard shipped
+        // with, so nothing changes until someone edits them in Studio.
+        rsr_left: rsr_left {
+            compatible = "zmk,behavior-runtime-sensor-rotate";
+            #sensor-binding-cells = <0>;
+            cw-binding = <&kp C_VOL_UP>;
+            ccw-binding = <&kp C_VOL_DN>;
+        };
+
+        // Right knob (sensor 1).
+        rsr_right: rsr_right {
+            compatible = "zmk,behavior-runtime-sensor-rotate";
+            #sensor-binding-cells = <0>;
+            cw-binding = <&kp UP>;
+            ccw-binding = <&kp DOWN>;
+        };
+    };
+
     keymap {
         compatible = "zmk,keymap";
 
@@ -18,7 +43,14 @@
 &kp LEFT_ALT      &kp LEFT_GUI  &kp SPACE     &kp RIGHT_ALT  &mo 1         &studio_unlock      &studio_unlock  &kp DELETE  &mo 1      &mo 2    &kp MINUS  &kp EQUAL
             >;
 
-            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp UP DOWN>;
+            // Order here is the sensor index: 0 = left knob, 1 = right knob.
+            //
+            // EVERY layer needs a sensor-bindings entry that points at a
+            // runtime-sensor-rotate instance. A layer without one (or with
+            // &trans) is skipped by the keymap, so Studio can happily save a
+            // binding for it and nothing will ever happen.
+            // &rsr_trans means "no default, but runtime-configurable".
+            sensor-bindings = <&rsr_left &rsr_right>;
         };
 
         layer_1 {
@@ -29,6 +61,10 @@
 &trans     &trans   &trans   &trans  &trans  &trans      &trans  &trans    &trans    &trans     &trans   &trans
 &trans     &trans   &trans   &trans  &trans  &trans      &trans  &trans    &trans    &trans     &trans   &trans
             >;
+
+            // No default binding, but configurable from the Studio tab. Until
+            // one is set the rotation falls through to the base layer.
+            sensor-bindings = <&rsr_trans &rsr_trans>;
         };
 
         layer_2 {
@@ -39,17 +75,25 @@
 &trans  &trans  &trans  &trans  &trans  &trans      &trans   &trans           &trans       &trans         &trans  &trans
 &trans  &trans  &trans  &trans  &trans  &trans      &trans   &trans           &trans       &trans         &trans  &trans
             >;
+
+            sensor-bindings = <&rsr_trans &rsr_trans>;
         };
 
         // Reserved layers are ignored by a normal build but become editable
         // from ZMK Studio / DYA Studio. See
         // https://zmk.dev/docs/features/studio#including-extra-layers
+        //
+        // They carry a runtime-sensor-rotate binding too, so that if one of
+        // them is brought to life from Studio its knobs can be configured
+        // instead of silently doing nothing.
         layer_3 {
             status = "reserved";
+            sensor-bindings = <&rsr_trans &rsr_trans>;
         };
 
         layer_4 {
             status = "reserved";
+            sensor-bindings = <&rsr_trans &rsr_trans>;
         };
     };
 };
