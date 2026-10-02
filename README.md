@@ -231,11 +231,11 @@ Adafruit UF2 bootloader keeps the rest.
 
 | Artifact | RAM | Flash |
 | --- | --- | --- |
-| `haili58_left_studio` | 160,008 (61.0%) | 487,244 (60.1%) |
-| `haili58_left_studio_unlocked` | 159,960 (61.0%) | 487,116 (60.1%) |
-| `haili58_right` | 94,788 (36.2%) | 361,260 (44.5%) |
+| `haili58_left_studio` | 160,008 (61.0%) | 487,308 (60.1%) |
+| `haili58_left_studio_unlocked` | 159,960 (61.0%) | 487,164 (60.1%) |
+| `haili58_right` | 94,788 (36.2%) | 361,772 (44.6%) |
 | `settings_reset_left` | 12,848 (4.9%) | 52,604 (6.5%) |
-| `settings_reset_right` | 94,788 (36.2%) | 361,356 (44.6%) |
+| `settings_reset_right` | 94,788 (36.2%) | 361,868 (44.6%) |
 
 The central half has roughly 100 KB of RAM left, so there is room for more of
 the optional modules — but the stack sizes in `config/haili58.conf` and
@@ -245,6 +245,11 @@ lower those one at a time rather than removing features.
 Runtime sensor rotate cost +8 KB of flash and +3 KB of RAM on the central half;
 `haili58_right` came out byte-identical before and after, which is the point of
 keeping the module central-only.
+
+Deep sleep (`CONFIG_ZMK_SLEEP=y`) cost **+64 B** of flash on the central half
+and **+512 B** on the peripheral, with no RAM change at all: `POWEROFF`,
+`PM_DEVICE` and `ZMK_PM_DEVICE_SUSPEND_RESUME` were already pulled in by
+`ZMK_PM_SOFT_OFF`, so only the `activity.c` sleep branch is new.
 
 ### Local build
 
