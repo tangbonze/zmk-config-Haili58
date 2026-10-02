@@ -32,8 +32,11 @@ jobs:
         uses: actions/cache@v4
         continue-on-error: true
         with:
+          # `dependencies/` only, never `.west`: restoring `.west/config` makes
+          # `west init` abort with
+          # "FATAL ERROR: already initialized in ...", which failed every run
+          # after the one that populated the cache.
           path: |
-            .west
             dependencies/zephyr
             dependencies/modules
             dependencies/zmk
@@ -45,6 +48,9 @@ jobs:
       - name: Init
         run: |
           git config --global --add safe.directory $GITHUB_WORKSPACE
+          # Cache entries written before the paths above were narrowed still
+          # contain a `.west` directory, so clear it before initializing.
+          rm -rf .west
           west init -l config
           west update --narrow
           west zephyr-export
