@@ -172,20 +172,25 @@ Turning a central-only module on in the shared file fails at link time with
 
 ### Measured build sizes
 
-nice!nano v2 (nRF52840, 256 KB RAM / 1 MB flash):
+nice!nano v2 (nRF52840). The linker only sees 792 KB of the 1 MB flash — the
+Adafruit UF2 bootloader keeps the rest.
 
 | Artifact | RAM | Flash |
 | --- | --- | --- |
-| `haili58_left_studio` | 233,605 (89.1%) | 478,819 (45.7%) |
-| `haili58_left_studio_unlocked` | 233,557 (89.1%) | 478,676 (45.7%) |
-| `haili58_right` | 143,292 (54.7%) | 361,250 (34.5%) |
-| `settings_reset_left` | 15,651 (6.0%) | 52,585 (5.0%) |
+| `haili58_left_studio` | 160,008 (61.0%) | 487,244 (60.1%) |
+| `haili58_left_studio_unlocked` | 159,960 (61.0%) | 487,116 (60.1%) |
+| `haili58_right` | 94,788 (36.2%) | 361,260 (44.5%) |
+| `settings_reset_left` | 12,848 (4.9%) | 52,604 (6.5%) |
+| `settings_reset_right` | 94,788 (36.2%) | 361,356 (44.6%) |
 
-The central half has ~28 KB of RAM left. That is enough, but it is the number
-to watch if you enable more of the optional modules — the stack sizes in
-`config/haili58.conf` and `config/haili58_left.conf` already follow the DYA
-Studio recommended values, so lower those one at a time rather than removing
-features.
+The central half has roughly 100 KB of RAM left, so there is room for more of
+the optional modules — but the stack sizes in `config/haili58.conf` and
+`config/haili58_left.conf` already follow the DYA Studio recommended values, so
+lower those one at a time rather than removing features.
+
+Runtime sensor rotate cost +8 KB of flash and +3 KB of RAM on the central half;
+`haili58_right` came out byte-identical before and after, which is the point of
+keeping the module central-only.
 
 ### Local build
 
