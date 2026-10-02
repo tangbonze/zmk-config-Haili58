@@ -51,9 +51,10 @@ Supported tabs on this keyboard:
 
 Notes and limitations:
 
-- **Sleep timeouts are not exposed.** `CONFIG_ZMK_SLEEP` needs `HAS_POWEROFF`,
-  which nice!nano does not declare, so the Settings tab has no sleep controls.
-  `CONFIG_ZMK_PM_SOFT_OFF=y` (long-press power off) still works.
+- **Power management lives in the Settings tab.** Deep sleep is enabled, so the
+  *Power Management* panel's idle / sleep timeouts actually apply. Waking after
+  a deep sleep needs a key press on the **left** half — see
+  [Power management](#power-management).
 - **No per-endpoint default layers.** `zmk-feature-default-layer` and
   `zmk-feature-os-detection` are not enabled here; see "Optional extras" below.
 - **The knobs are configured from the Keymap view, not a separate tab.** DYA
@@ -136,6 +137,58 @@ easy to get wrong:
   it the panel reads and writes normally but rotating does nothing beyond
   logging `Failed to find behavior for local_id N`.
 
+## Power management
+
+Three separate things, all configured from
+[`config/haili58.conf`](config/haili58.conf):
+
+| Setting | State | Effect |
+| --- | --- | --- |
+| `CONFIG_ZMK_IDLE_TIMEOUT` | 30 s (ZMK default) | OLED blanks; BLE stays connected |
+| `CONFIG_ZMK_IDLE_SLEEP_TIMEOUT` | 15 min, `CONFIG_ZMK_SLEEP=y` | keyboard powers off |
+| `CONFIG_ZMK_PM_SOFT_OFF=y` | enabled, **no key binds `&soft_off`** | manual power-off |
+
+**Idle vs deep sleep.** Idle just disables the display; the keyboard is still
+connected and answers the first key press instantly. Deep sleep is a real
+software power-off: it drops the BLE links, blanks the display, clears RAM and
+takes a couple of seconds to reconnect. It is skipped while USB is attached
+(`!is_usb_power_present()`), so a plugged-in keyboard never turns itself off.
+
+**Waking.** Deep sleep needs a `wakeup-source`, which both `kscan0` nodes
+already carry (see
+[`boards/shields/haili58/haili58_left.overlay`](boards/shields/haili58/haili58_left.overlay)).
+The two halves time out independently and ZMK has no cross-half wake-up — a key
+press only wakes the half it happened on, and a sleeping central has its radio
+off, so **press a key on the left half to bring the keyboard back**.
+
+**Timeouts are runtime-configurable.** `CONFIG_ZMK_IDLE_SLEEP_TIMEOUT` is only
+the initial value; DYA Studio's *Power Management* panel writes a different pair
+into settings and it survives reboots. Its "reset to defaults" button uses 30 s
+idle / 15 min sleep.
+
+**The panel needs `CONFIG_ZMK_SLEEP=y`.** It is rendered whenever
+`zmk-module-settings-rpc` is compiled in — the UI does not ask the firmware
+whether deep sleep exists. It then sends idle and sleep in a single
+`SetActivitySettings` request and discards the whole thing if either half
+fails, and `zmk_activity_set_sleep_ms()` returns `false` unconditionally while
+`CONFIG_ZMK_SLEEP=n`. With deep sleep off, every apply *and* the reset button
+fail with "Failed to update activity settings", and the idle change is not
+relayed to the right half either, because the handler only raises the relay
+event when both succeed.
+
+**Soft off** is compiled in but unreachable: nothing in
+[`config/haili58.keymap`](config/haili58.keymap) binds `&soft_off`. That also
+means the node is dropped from the right half's image — the left/Studio builds
+pass `-DZMK_BEHAVIORS_KEEP_ALL` and keep every behavior, but `haili58_right`
+does not (the string `z_so_off` is absent from its UF2). Referencing `&soft_off`
+in the keymap is what makes it present on **both** halves, which is what
+`split-peripheral-off-on-press` needs to power the right half down as well.
+
+Waking from soft off is much more restrictive than from deep sleep: it needs a
+`zmk,soft-off-wakeup-sources` node or a dedicated button, and neither exists
+here (the `wakeup-source` on `kscan0` only covers deep sleep). Bind it on a
+layer you can reach with one hand, and expect to press reset afterwards.
+
 ## Build layout
 
 | File | Purpose |
@@ -166,6 +219,7 @@ left half (later file wins), and only `haili58.conf` for the right half. So:
 | `ZMK_SPLIT_RELAY_EVENT` | ✅ | ✅ | lets the central forward DYA Studio requests to the peripheral |
 | `ZMK_SETTINGS_RPC`, `ZMK_WATCHDOG`, `ZMK_KSCAN_DIAGNOSTICS`, `ZMK_FAST_KEYMAP` | ✅ | ✅ | the peripheral has to answer relayed queries and store its own state |
 | `ZMK_DEVICE_INFO`, `ZMK_BLE_MANAGEMENT`, `ZMK_PHYSICAL_LAYOUTS_FEATURE` | ✅ | ✅ | cheap, and the peripheral reports its own half |
+| `ZMK_SLEEP`, `ZMK_PM_SOFT_OFF` | ✅ | ✅ | each half powers itself off on its own activity timer |
 
 Turning a central-only module on in the shared file fails at link time with
 `undefined reference to zmk_behavior_queue_add`.
