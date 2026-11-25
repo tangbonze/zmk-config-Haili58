@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/cormoran
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware
+    - name: tangbonze
+      url-base: https://github.com/tangbonze
   projects:
     # `west zmk-build` helper used by the CI workflow and for local builds.
     - name: zmk-west-commands
@@ -60,3 +62,9 @@ manifest:
     # west-dependency template, so it has nothing to pull in.
     # https://github.com/cormoran/zmk-behavior-runtime-sensor-rotate
     - name: zmk-behavior-runtime-sensor-rotate
+
+    # ZMK KeyTester physical matrix reader module (WebHID Raw HID).
+    # https://github.com/tangbonze/zmk-matrix-tester
+    - name: zmk-matrix-tester
+      remote: tangbonze
+      revision: main
